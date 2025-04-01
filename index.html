@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Liquid Distortion Effect</title>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+<script id="vertexShader" type="x-shader/x-vertex">
+  varying vec2 vUv;
+  void main() {
+    vUv = uv;
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+  }
+</script>
+
+<script id="fragmentShader" type="x-shader/x-fragment">
+  uniform sampler2D uImage;
+  uniform float uTime;
+  uniform vec2 uMouse;
+  uniform float uHover;
+  varying vec2 vUv;
+
+  void main() {
+    vec2 uv = vUv;
+
+    // subtle background animation
+    float wave = sin(uv.y * 10.0 + uTime * 2.0) * 0.005;
+    float ripple = cos(uv.x * 20.0 + uTime * 3.0) * 0.005;
+    uv.x += wave;
+    uv.y += ripple;
+
+    // mouse-based ripple distortion
+    float dist = distance(uv, uMouse);
+    float distortion = smoothstep(0.3, 0.0, dist) * 0.03 * uHover;
+
+    uv += vec2(distortion, distortion);
+
+    vec4 color = texture2D(uImage, uv);
+    gl_FragColor = color;
+  }
+</script>
+
+<script>
+  const scene = new THREE.Scene();
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.body.appendChild(renderer.domElement);
+
+  const uniforms = {
+    uImage: { value: null },
+    uTime: { value: 0 },
+    uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+    uHover: { value: 0.0 }
+  };
+
+  const loader = new THREE.TextureLoader();
+  loader.load('https://images.unsplash.com/photo-1503023345310-bd7c1de61c7d?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&q=80', (texture) => {
+    texture.minFilter = THREE.LinearFilter;
+    uniforms.uImage.value = texture;
+  });
+
+  const material = new THREE.ShaderMaterial({
+    vertexShader: document.getElementById('vertexShader').textContent,
+    fragmentShader: document.getElementById('fragmentShader').textContent,
+    uniforms: uniforms
+  });
+
+  const geometry = new THREE.PlaneGeometry(2, 2);
+  const mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
+
+  let isHovering = false;
+
+  window.addEventListener('mousemove', (e) => {
+    const x = e.clientX / window.innerWidth;
+    const y = 1.0 - e.clientY / window.innerHeight;
+    uniforms.uMouse.value.set(x, y);
+    uniforms.uHover.value = 1.0;
+    isHovering = true;
+  });
+
+  window.addEventListener('mouseleave', () => {
+    uniforms.uHover.value = 0.0;
+    isHovering = false;
+  });
+
+  const clock = new THREE.Clock();
+
+  function animate() {
+    uniforms.uTime.value = clock.getElapsedTime();
+    requestAnimationFrame(animate);
+    renderer.render(scene, camera);
+  }
+
+  animate();
+
+  window.addEventListener('resize', () => {
+    renderer.setSize(window.innerWidth, window.innerHeight);
+  });
+</script>
+</body>
+</html>
