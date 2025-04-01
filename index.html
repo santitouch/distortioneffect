@@ -2,116 +2,126 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Liquid Distortion Effect</title>
+  <title>Responsive WebGL Distortion</title>
   <style>
-  html, body {
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-    width: 100%;
-    height: 100%;
-    background: #000;
-  }
-  canvas {
-    display: block;
-  }
-</style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background: #000;
+      overflow: hidden;
+    }
+
+    #webgl-container {
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 100% !important;
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+  </style>
 </head>
 <body>
-<script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
-<script id="vertexShader" type="x-shader/x-vertex">
-  varying vec2 vUv;
-  void main() {
-    vUv = uv;
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-  }
-</script>
+  <div id="webgl-container"></div>
 
-<script id="fragmentShader" type="x-shader/x-fragment">
-  uniform sampler2D uImage;
-  uniform float uTime;
-  uniform vec2 uMouse;
-  uniform float uHover;
-  varying vec2 vUv;
+  <script src="https://cdn.jsdelivr.net/npm/three@0.150.1/build/three.min.js"></script>
+  <script id="vertexShader" type="x-shader/x-vertex">
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+    }
+  </script>
 
-  void main() {
-    vec2 uv = vUv;
+  <script id="fragmentShader" type="x-shader/x-fragment">
+    uniform sampler2D uImage;
+    uniform float uTime;
+    uniform vec2 uMouse;
+    uniform float uHover;
+    varying vec2 vUv;
 
-    // subtle background animation
-    float wave = sin(uv.y * 10.0 + uTime * 2.0) * 0.005;
-    float ripple = cos(uv.x * 20.0 + uTime * 3.0) * 0.005;
-    uv.x += wave;
-    uv.y += ripple;
+    void main() {
+      vec2 uv = vUv;
 
-    // mouse-based ripple distortion
-    float dist = distance(uv, uMouse);
-    float distortion = smoothstep(0.3, 0.0, dist) * 0.03 * uHover;
+      float wave = sin(uv.y * 10.0 + uTime * 2.0) * 0.005;
+      float ripple = cos(uv.x * 20.0 + uTime * 3.0) * 0.005;
+      uv.x += wave;
+      uv.y += ripple;
 
-    uv += vec2(distortion, distortion);
+      float dist = distance(uv, uMouse);
+      float distortion = smoothstep(0.3, 0.0, dist) * 0.03 * uHover;
 
-    vec4 color = texture2D(uImage, uv);
-    gl_FragColor = color;
-  }
-</script>
+      uv += vec2(distortion, distortion);
 
-<script>
-  const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-  const renderer = new THREE.WebGLRenderer({ antialias: true });
-  renderer.setSize(window.innerWidth, window.innerHeight);
-  document.body.appendChild(renderer.domElement);
+      vec4 color = texture2D(uImage, uv);
+      gl_FragColor = color;
+    }
+  </script>
 
-  const uniforms = {
-    uImage: { value: null },
-    uTime: { value: 0 },
-    uMouse: { value: new THREE.Vector2(0.5, 0.5) },
-    uHover: { value: 0.0 }
-  };
-
-  const loader = new THREE.TextureLoader();
-  loader.load('https://santitouch.github.io/distortioneffect/Futuristic_Urban_Vehicle.png', (texture) => {
-    texture.minFilter = THREE.LinearFilter;
-    uniforms.uImage.value = texture;
-  });
-
-  const material = new THREE.ShaderMaterial({
-    vertexShader: document.getElementById('vertexShader').textContent,
-    fragmentShader: document.getElementById('fragmentShader').textContent,
-    uniforms: uniforms
-  });
-
-  const geometry = new THREE.PlaneGeometry(2, 2);
-  const mesh = new THREE.Mesh(geometry, material);
-  scene.add(mesh);
-
-  let isHovering = false;
-
-  window.addEventListener('mousemove', (e) => {
-    const x = e.clientX / window.innerWidth;
-    const y = 1.0 - e.clientY / window.innerHeight;
-    uniforms.uMouse.value.set(x, y);
-    uniforms.uHover.value = 1.0;
-    isHovering = true;
-  });
-
-  window.addEventListener('mouseleave', () => {
-    uniforms.uHover.value = 0.0;
-    isHovering = false;
-  });
-
-  const clock = new THREE.Clock();
-
-  function animate() {
-    uniforms.uTime.value = clock.getElapsedTime();
-    requestAnimationFrame(animate);
-    renderer.render(scene, camera);
-  }
-
-  animate();
-
-  window.addEventListener('resize', () => {
+  <script>
+    const scene = new THREE.Scene();
+    const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(window.innerWidth, window.innerHeight);
-  });
-</script>
+    document.getElementById('webgl-container').appendChild(renderer.domElement);
+
+    const uniforms = {
+      uImage: { value: null },
+      uTime: { value: 0 },
+      uMouse: { value: new THREE.Vector2(0.5, 0.5) },
+      uHover: { value: 0.0 }
+    };
+
+    const loader = new THREE.TextureLoader();
+    loader.load('https://santitouch.github.io/distortioneffect/Futuristic_Urban_Vehicle.png?v=3', (texture) => {
+      texture.minFilter = THREE.LinearFilter;
+      uniforms.uImage.value = texture;
+    });
+
+    const material = new THREE.ShaderMaterial({
+      vertexShader: document.getElementById('vertexShader').textContent,
+      fragmentShader: document.getElementById('fragmentShader').textContent,
+      uniforms: uniforms
+    });
+
+    const geometry = new THREE.PlaneGeometry(2, 2);
+    const mesh = new THREE.Mesh(geometry, material);
+    scene.add(mesh);
+
+    window.addEventListener('mousemove', (e) => {
+      const x = e.clientX / window.innerWidth;
+      const y = 1.0 - e.clientY / window.innerHeight;
+      uniforms.uMouse.value.set(x, y);
+      uniforms.uHover.value = 1.0;
+    });
+
+    window.addEventListener('mouseleave', () => {
+      uniforms.uHover.value = 0.0;
+    });
+
+    const clock = new THREE.Clock();
+
+    function animate() {
+      uniforms.uTime.value = clock.getElapsedTime();
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+
+    window.addEventListener('resize', () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height);
+    });
+  </script>
 </body>
 </html>
