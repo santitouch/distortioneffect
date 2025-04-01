@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Responsive 3:4 WebGL</title>
+  <title>WebGL Responsive - 3:4 on Mobile</title>
   <style>
     html, body {
       margin: 0;
@@ -13,12 +13,18 @@
     }
 
     #webgl-wrapper {
-      max-width: 100%;
       width: 100%;
-      height: auto;
-      aspect-ratio: 3 / 4;
-      margin: 0 auto;
+      height: 100vh;
+      max-width: 100%;
       position: relative;
+      overflow: hidden;
+    }
+
+    @media (max-width: 768px) and (orientation: portrait) {
+      #webgl-wrapper {
+        aspect-ratio: 3 / 4;
+        height: auto;
+      }
     }
 
     canvas {
@@ -80,7 +86,7 @@
     };
 
     const loader = new THREE.TextureLoader();
-    loader.load('https://santitouch.github.io/distortioneffect/Futuristic_Urban_Vehicle.png?v=6', (texture) => {
+    loader.load('https://santitouch.github.io/distortioneffect/Futuristic_Urban_Vehicle.png?v=8', (texture) => {
       texture.minFilter = THREE.LinearFilter;
       uniforms.uImage.value = texture;
     });
@@ -98,15 +104,15 @@
     function resizeCanvas() {
       const width = container.clientWidth;
       const height = container.clientHeight;
+
       renderer.setSize(width, height);
       renderer.setPixelRatio(window.devicePixelRatio);
+      renderer.domElement.style.width = width + 'px';
+      renderer.domElement.style.height = height + 'px';
     }
 
-    resizeCanvas(); // call once on load
-
-    window.addEventListener('resize', () => {
-      resizeCanvas();
-    });
+    resizeCanvas(); // initial render size
+    window.addEventListener('resize', resizeCanvas);
 
     window.addEventListener('mousemove', (e) => {
       const bounds = container.getBoundingClientRect();
