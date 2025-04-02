@@ -57,8 +57,8 @@
     void main() {
       vec2 uv = vUv;
 
-      float wave = sin(uv.y * 5.0 + uTime * 1.0) * 0.005;
-      float ripple = cos(uv.x * 10.0 + uTime * 2.0) * 0.005;
+      float wave = sin(uv.y * 10.0 + uTime * 2.0) * 0.005;
+      float ripple = cos(uv.x * 20.0 + uTime * 3.0) * 0.005;
       uv.x += wave;
       uv.y += ripple;
 
